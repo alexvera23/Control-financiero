@@ -45,6 +45,23 @@ dev_dependencies:
   # package. See that file for information about deactivating specific lint
   # rules and activating additional ones.
   flutter_lints: ^6.0.0
+  # Persistencia de Datos (Requisito: SQLite)
+  sqflite: ^2.3.0
+  path: ^1.8.3
+  path_provider: ^2.1.1
+
+  # Gestión de Estado y Sesión
+  provider: ^6.1.1
+  shared_preferences: ^2.2.2
+
+  # Formateo de Monedas y Fechas (Requisito: intl)
+  intl: ^0.19.0
+
+  # Estadísticas y Gráficos (Módulo 7)
+  fl_chart: ^0.66.0
+
+  # Fuentes y Estilo (Opcional, mejora el Material Design)
+  google_fonts: ^6.1.0
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
