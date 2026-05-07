@@ -1,5 +1,9 @@
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
+import '../models/users.dart';
+import '../models/categoria.dart';
+import '../models/movimientos.dart';
+import '../models/presupuesto.dart';
 
 class DatabaseHelper {
   // Patrón Singleton: asegura que solo exista una instancia de esta clase.
@@ -113,5 +117,70 @@ class DatabaseHelper {
     final dbPath = await getDatabasesPath();
     final path = join(dbPath, 'control_financiero.db');
     await deleteDatabase(path);
+  }
+
+
+ 
+  // MÓDULO 1: MÉTODOS DE AUTENTICACIÓN (Usuario)
+ 
+
+  /// Registra un nuevo usuario en la base de datos.
+  /// Retorna el ID del nuevo usuario si fue exitoso.
+  /// Lanza una excepción si el correo ya existe.
+  Future<int> registrarUsuario(User usuario) async {
+    final db = await instance.database;
+    
+    // 1. Verificar si el email ya existe
+    final result = await db.query(
+      tableUsuarios,
+      where: 'email = ?',
+      whereArgs: [usuario.email],
+    );
+
+    if (result.isNotEmpty) {
+      throw Exception('El correo electrónico ya está registrado.');
+    }
+
+    // 2. Si no existe, insertar el nuevo usuario
+    // SQLite generará automáticamente el ID
+    return await db.insert(tableUsuarios, usuario.toMap());
+  }
+
+  /// Valida las credenciales para el inicio de sesión.
+  /// Retorna el objeto User si las credenciales son correctas,
+  /// o null si el correo o la contraseña son incorrectos.
+  Future<User?> loginUsuario(String email, String password) async {
+    final db = await instance.database;
+    
+    // Buscar un usuario que coincida con el email y el password
+    final result = await db.query(
+      tableUsuarios,
+      where: 'email = ? AND password = ?',
+      whereArgs: [email, password],
+    );
+
+    // Si encontramos una coincidencia, retornamos el objeto User
+    if (result.isNotEmpty) {
+      return User.fromMap(result.first);
+    } else {
+      // Credenciales inválidas
+      return null;
+    }
+  }
+
+  /// (Opcional pero útil) Obtener los datos de un usuario por su ID
+  /// Sirve para cuando abres la app y ya hay una sesión guardada.
+  Future<User?> getUsuarioById(int id) async {
+    final db = await instance.database;
+    final result = await db.query(
+      tableUsuarios,
+      where: 'id = ?',
+      whereArgs: [id],
+    );
+
+    if (result.isNotEmpty) {
+      return User.fromMap(result.first);
+    }
+    return null;
   }
 }
