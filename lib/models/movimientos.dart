@@ -1,4 +1,4 @@
-class Movement {
+class Movimiento {
   final int? id;
   final String tipo; // 'Ingreso' o 'Gasto'
   final double cantidad;
@@ -7,8 +7,10 @@ class Movement {
   final String metodoPago; // 'Efectivo', 'Tarjeta', 'Transferencia'
   final int categoriaId;
   final int usuarioId;
+  final String? categoriaNombre;
+  final String? categoriaColor;
 
-  Movement({
+  Movimiento({
     this.id,
     required this.tipo,
     required this.cantidad,
@@ -17,6 +19,8 @@ class Movement {
     required this.metodoPago,
     required this.categoriaId,
     required this.usuarioId,
+    this.categoriaNombre,
+    this.categoriaColor,
   });
 
   Map<String, dynamic> toMap() {
@@ -32,8 +36,8 @@ class Movement {
     };
   }
 
-  factory Movement.fromMap(Map<String, dynamic> map) {
-    return Movement(
+  factory Movimiento.fromMap(Map<String, dynamic> map) {
+    return Movimiento(
       id: map['id'],
       tipo: map['tipo'],
       // SQLite a veces retorna enteros aunque sea REAL, por eso forzamos a double
@@ -43,6 +47,8 @@ class Movement {
       metodoPago: map['metodo_pago'],
       categoriaId: map['categoria_id'],
       usuarioId: map['usuario_id'],
+      categoriaNombre: map['categoria_nombre'],
+      categoriaColor: map['color'],
     );
   }
 }

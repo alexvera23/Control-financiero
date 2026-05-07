@@ -3,7 +3,6 @@ import 'package:path/path.dart';
 import '../models/users.dart';
 import '../models/categoria.dart';
 import '../models/movimientos.dart';
-import '../models/presupuesto.dart';
 
 class DatabaseHelper {
   // Patrón Singleton: asegura que solo exista una instancia de esta clase.
@@ -119,17 +118,14 @@ class DatabaseHelper {
     await deleteDatabase(path);
   }
 
-
- 
   // MÓDULO 1: MÉTODOS DE AUTENTICACIÓN (Usuario)
- 
 
   /// Registra un nuevo usuario en la base de datos.
   /// Retorna el ID del nuevo usuario si fue exitoso.
   /// Lanza una excepción si el correo ya existe.
   Future<int> registrarUsuario(User usuario) async {
     final db = await instance.database;
-    
+
     // 1. Verificar si el email ya existe
     final result = await db.query(
       tableUsuarios,
@@ -151,7 +147,7 @@ class DatabaseHelper {
   /// o null si el correo o la contraseña son incorrectos.
   Future<User?> loginUsuario(String email, String password) async {
     final db = await instance.database;
-    
+
     // Buscar un usuario que coincida con el email y el password
     final result = await db.query(
       tableUsuarios,
@@ -182,5 +178,121 @@ class DatabaseHelper {
       return User.fromMap(result.first);
     }
     return null;
+  }
+
+  // ─────────────────────────────────────────────────────────────
+  //  MÓDULO 5 – CRUD CATEGORÍAS
+  // ─────────────────────────────────────────────────────────────
+
+  /// Crea una nueva categoría para el usuario dado.
+  Future<int> insertarCategoria(Categoria categoria) async {
+    final db = await instance.database;
+    return await db.insert(tableCategorias, categoria.toMap());
+  }
+
+  /// Retorna todas las categorías del usuario.
+  Future<List<Categoria>> getCategorias(int usuarioId) async {
+    final db = await instance.database;
+    final maps = await db.query(
+      tableCategorias,
+      where: 'usuario_id = ?',
+      whereArgs: [usuarioId],
+      orderBy: 'nombre ASC',
+    );
+    return maps.map((m) => Categoria.fromMap(m)).toList();
+  }
+
+  /// Actualiza los datos de una categoría existente.
+  Future<int> actualizarCategoria(Categoria categoria) async {
+    final db = await instance.database;
+    return await db.update(
+      tableCategorias,
+      categoria.toMap(),
+      where: 'id = ?',
+      whereArgs: [categoria.id],
+    );
+  }
+
+  /// Elimina una categoría. Por CASCADE, sus movimientos también se eliminan.
+  Future<int> eliminarCategoria(int id) async {
+    final db = await instance.database;
+    return await db.delete(tableCategorias, where: 'id = ?', whereArgs: [id]);
+  }
+
+  // ─────────────────────────────────────────────────────────────
+  //  MÓDULO 3 y 4 – CRUD MOVIMIENTOS
+  // ─────────────────────────────────────────────────────────────
+
+  /// Inserta un nuevo movimiento.
+  Future<int> insertarMovimiento(Movimiento movimiento) async {
+    final db = await instance.database;
+    return await db.insert(tableMovimientos, movimiento.toMap());
+  }
+
+  /// Retorna los movimientos del usuario con JOIN para obtener
+  /// nombre, color e icono de la categoría.
+  /// Permite filtrar por tipo ('Ingreso'/'Gasto'), categoriaId y rango de fechas.
+  Future<List<Movimiento>> getMovimientos(
+    int usuarioId, {
+    String? tipo,
+    int? categoriaId,
+    String? fechaDesde, // YYYY-MM-DD
+    String? fechaHasta, // YYYY-MM-DD
+  }) async {
+    final db = await instance.database;
+
+    // Construir WHERE dinámicamente
+    final conditions = <String>['m.usuario_id = ?'];
+    final args = <dynamic>[usuarioId];
+
+    if (tipo != null) {
+      conditions.add("m.tipo = ?");
+      args.add(tipo);
+    }
+    if (categoriaId != null) {
+      conditions.add("m.categoria_id = ?");
+      args.add(categoriaId);
+    }
+    if (fechaDesde != null) {
+      conditions.add("m.fecha >= ?");
+      args.add(fechaDesde);
+    }
+    if (fechaHasta != null) {
+      conditions.add("m.fecha <= ?");
+      args.add(fechaHasta);
+    }
+
+    final whereClause = conditions.join(' AND ');
+
+    // JOIN con categorías para traer nombre, color e icono
+    final maps = await db.rawQuery('''
+    SELECT 
+      m.id, m.tipo, m.cantidad, m.descripcion,
+      m.fecha, m.metodo_pago, m.categoria_id, m.usuario_id,
+      c.nombre AS categoria_nombre, c.color, c.icono
+    FROM $tableMovimientos m
+    INNER JOIN $tableCategorias c ON m.categoria_id = c.id
+    WHERE $whereClause
+    ORDER BY m.fecha DESC, m.id DESC
+  ''', args);
+
+    return maps.map((m) => Movimiento.fromMap(m)).toList();
+  }
+
+  /// Actualiza un movimiento existente.
+  Future<int> actualizarMovimiento(Movimiento movimiento) async {
+    final db = await instance.database;
+    return await db.update(
+      tableMovimientos,
+      movimiento.toMap(),
+      where: 'id = ?',
+      whereArgs: [movimiento.id],
+    );
+  }
+
+  /// Elimina un movimiento por su ID.
+  Future<int> eliminarMovimiento(int id) async {
+    final db = await instance.database;
+    return await db.delete(tableMovimientos, where: 'id = ?', whereArgs: [id]);
   }
 }
