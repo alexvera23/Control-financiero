@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../database/database_helper.dart';
 import '../../models/categoria.dart';
-import '../../widgets/icon_picker.dart';
+import '../../utils/icon_picker.dart';
 
 class CategoriasScreen extends StatefulWidget {
   final int usuarioId;
@@ -32,24 +32,16 @@ class _CategoriasScreenState extends State<CategoriasScreen> {
 
   // ── Diálogo para Crear o Editar ──────────────────────────────
   Future<void> _mostrarDialogoCategoria({Categoria? categoriaExistente}) async {
-    final nombreCtrl = TextEditingController(
-      text: categoriaExistente?.nombre ?? '',
-    );
+    final nombreCtrl =
+        TextEditingController(text: categoriaExistente?.nombre ?? '');
     String colorSeleccionado = categoriaExistente?.color ?? '#2196F3';
     String iconoSeleccionado = categoriaExistente?.icono ?? 'e318'; // fastfood
 
     // Paleta de colores predefinidos
     final colores = [
-      '#F44336',
-      '#E91E63',
-      '#9C27B0',
-      '#3F51B5',
-      '#2196F3',
-      '#00BCD4',
-      '#4CAF50',
-      '#FF9800',
-      '#795548',
-      '#607D8B',
+      '#F44336', '#E91E63', '#9C27B0', '#3F51B5',
+      '#2196F3', '#00BCD4', '#4CAF50', '#FF9800',
+      '#795548', '#607D8B',
     ];
 
     await showDialog(
@@ -99,11 +91,7 @@ class _CategoriasScreenState extends State<CategoriasScreen> {
                               : null,
                         ),
                         child: seleccionado
-                            ? const Icon(
-                                Icons.check,
-                                color: Colors.white,
-                                size: 20,
-                              )
+                            ? const Icon(Icons.check, color: Colors.white, size: 20)
                             : null,
                       ),
                     );
@@ -176,9 +164,8 @@ class _CategoriasScreenState extends State<CategoriasScreen> {
                     color: colorSeleccionado,
                     icono: iconoSeleccionado,
                   );
-                  await DatabaseHelper.instance.actualizarCategoria(
-                    actualizada,
-                  );
+                  await DatabaseHelper.instance
+                      .actualizarCategoria(actualizada);
                 }
 
                 if (ctx.mounted) Navigator.pop(ctx);
@@ -210,10 +197,7 @@ class _CategoriasScreenState extends State<CategoriasScreen> {
           ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
             onPressed: () => Navigator.pop(context, true),
-            child: const Text(
-              'Eliminar',
-              style: TextStyle(color: Colors.white),
-            ),
+            child: const Text('Eliminar', style: TextStyle(color: Colors.white)),
           ),
         ],
       ),
@@ -251,19 +235,18 @@ class _CategoriasScreenState extends State<CategoriasScreen> {
       body: _cargando
           ? const Center(child: CircularProgressIndicator())
           : _categorias.isEmpty
-          ? _buildEstadoVacio()
-          : ListView.separated(
-              padding: const EdgeInsets.all(12),
-              itemCount: _categorias.length,
-              separatorBuilder: (_, __) => const SizedBox(height: 8),
-              itemBuilder: (_, i) => _CategoriaCard(
-                categoria: _categorias[i],
-                onEditar: () => _mostrarDialogoCategoria(
-                  categoriaExistente: _categorias[i],
+              ? _buildEstadoVacio()
+              : ListView.separated(
+                  padding: const EdgeInsets.all(12),
+                  itemCount: _categorias.length,
+                  separatorBuilder: (_, __) => const SizedBox(height: 8),
+                  itemBuilder: (_, i) => _CategoriaCard(
+                    categoria: _categorias[i],
+                    onEditar: () =>
+                        _mostrarDialogoCategoria(categoriaExistente: _categorias[i]),
+                    onEliminar: () => _confirmarEliminar(_categorias[i]),
+                  ),
                 ),
-                onEliminar: () => _confirmarEliminar(_categorias[i]),
-              ),
-            ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => _mostrarDialogoCategoria(),
         icon: const Icon(Icons.add),

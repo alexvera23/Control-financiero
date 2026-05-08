@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../../database/database_helper.dart';
 import '../../models/categoria.dart';
-import '../../models/movimientos.dart';
+import '../../models/movimiento.dart';
 
 class FormularioMovimientoScreen extends StatefulWidget {
   final int usuarioId;
@@ -57,13 +57,14 @@ class _FormularioMovimientoScreenState
   }
 
   Future<void> _cargarCategorias() async {
-    final lista = await DatabaseHelper.instance.getCategorias(widget.usuarioId);
+    final lista =
+        await DatabaseHelper.instance.getCategorias(widget.usuarioId);
     setState(() {
       _categorias = lista;
       if (_esEdicion) {
         _categoriaSeleccionada = lista.firstWhere(
           (c) => c.id == widget.movimientoExistente!.categoriaId,
-          orElse: () => lista.isNotEmpty ? lista.first : lista.first,
+          orElse: () => lista.first,
         );
       } else if (lista.isNotEmpty) {
         _categoriaSeleccionada = lista.first;
@@ -87,9 +88,9 @@ class _FormularioMovimientoScreenState
   Future<void> _guardar() async {
     if (!_formKey.currentState!.validate()) return;
     if (_categoriaSeleccionada == null) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Selecciona una categoría')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Selecciona una categoría')),
+      );
       return;
     }
 
@@ -117,9 +118,8 @@ class _FormularioMovimientoScreenState
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(
-            _esEdicion ? 'Movimiento actualizado' : 'Movimiento guardado',
-          ),
+          content:
+              Text(_esEdicion ? 'Movimiento actualizado' : 'Movimiento guardado'),
         ),
       );
       Navigator.pop(context, true); // true = hubo cambios
@@ -156,9 +156,8 @@ class _FormularioMovimientoScreenState
                     // ── Cantidad ───────────────────────────────
                     TextFormField(
                       controller: _cantidadCtrl,
-                      keyboardType: const TextInputType.numberWithOptions(
-                        decimal: true,
-                      ),
+                      keyboardType:
+                          const TextInputType.numberWithOptions(decimal: true),
                       decoration: const InputDecoration(
                         labelText: 'Cantidad *',
                         prefixText: '\$ ',
@@ -205,9 +204,7 @@ class _FormularioMovimientoScreenState
                         border: OutlineInputBorder(),
                       ),
                       items: _metodosPago
-                          .map(
-                            (m) => DropdownMenuItem(value: m, child: Text(m)),
-                          )
+                          .map((m) => DropdownMenuItem(value: m, child: Text(m)))
                           .toList(),
                       onChanged: (v) => setState(() => _metodoPago = v!),
                     ),
@@ -293,7 +290,10 @@ class _FormularioMovimientoScreenState
           value: c,
           child: Row(
             children: [
-              CircleAvatar(backgroundColor: color, radius: 12),
+              CircleAvatar(
+                backgroundColor: color,
+                radius: 12,
+              ),
               const SizedBox(width: 8),
               Text(c.nombre),
             ],
@@ -313,7 +313,9 @@ class _FormularioMovimientoScreenState
           border: OutlineInputBorder(),
           suffixIcon: Icon(Icons.calendar_today),
         ),
-        child: Text(DateFormat('dd/MM/yyyy').format(_fechaSeleccionada)),
+        child: Text(
+          DateFormat('dd/MM/yyyy').format(_fechaSeleccionada),
+        ),
       ),
     );
   }

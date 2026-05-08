@@ -1,8 +1,8 @@
 class Categoria {
   final int? id;
   final String nombre;
-  final String color; // Se puede guardar como HexString, ej: '#FF0000'
-  final String icono; // Se puede guardar el nombre del icono, ej: 'fastfood'
+  final String color; // Hex color ej: '#FF5733'
+  final String icono; // Codepoint del icono ej: 'e318' (Icons.fastfood)
   final int usuarioId;
 
   Categoria({
@@ -15,12 +15,22 @@ class Categoria {
 
   Map<String, dynamic> toMap() {
     return {
-      'id': id,
+      if (id != null) 'id': id,
       'nombre': nombre,
       'color': color,
       'icono': icono,
       'usuario_id': usuarioId,
     };
+  }
+
+  factory Categoria.fromMap(Map<String, dynamic> map) {
+    return Categoria(
+      id: map['id'] as int?,
+      nombre: map['nombre'] as String,
+      color: map['color'] as String,
+      icono: map['icono'] as String,
+      usuarioId: map['usuario_id'] as int,
+    );
   }
 
   Categoria copyWith({
@@ -36,16 +46,6 @@ class Categoria {
       color: color ?? this.color,
       icono: icono ?? this.icono,
       usuarioId: usuarioId ?? this.usuarioId,
-    );
-  }
-
-  factory Categoria.fromMap(Map<String, dynamic> map) {
-    return Categoria(
-      id: map['id'],
-      nombre: map['nombre'],
-      color: map['color'],
-      icono: map['icono'],
-      usuarioId: map['usuario_id'],
     );
   }
 }

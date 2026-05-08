@@ -2,7 +2,8 @@ import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
 import '../models/users.dart';
 import '../models/categoria.dart';
-import '../models/movimientos.dart';
+import '../models/movimiento.dart';
+import '../models/presupuesto.dart';
 
 class DatabaseHelper {
   // Patrón Singleton: asegura que solo exista una instancia de esta clase.
@@ -180,14 +181,14 @@ class DatabaseHelper {
     return null;
   }
 
-  // ─────────────────────────────────────────────────────────────
-  //  MÓDULO 5 – CRUD CATEGORÍAS
-  // ─────────────────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────
+//  MÓDULO 5 – CRUD CATEGORÍAS
+// ─────────────────────────────────────────────────────────────
 
-  /// Crea una nueva categoría para el usuario dado.
-  Future<int> insertarCategoria(Categoria categoria) async {
-    final db = await instance.database;
-    return await db.insert(tableCategorias, categoria.toMap());
+/// Crea una nueva categoría para el usuario dado.
+Future<int> insertarCategoria(Categoria categoria) async {
+  final db = await instance.database;
+  return await db.insert(tableCategorias, categoria.toMap());
   }
 
   /// Retorna todas las categorías del usuario.
@@ -216,14 +217,18 @@ class DatabaseHelper {
   /// Elimina una categoría. Por CASCADE, sus movimientos también se eliminan.
   Future<int> eliminarCategoria(int id) async {
     final db = await instance.database;
-    return await db.delete(tableCategorias, where: 'id = ?', whereArgs: [id]);
+    return await db.delete(
+      tableCategorias,
+      where: 'id = ?',
+      whereArgs: [id],
+    );
   }
 
-  // ─────────────────────────────────────────────────────────────
-  //  MÓDULO 3 y 4 – CRUD MOVIMIENTOS
-  // ─────────────────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────
+//  MÓDULO 3 y 4 – CRUD MOVIMIENTOS
+// ─────────────────────────────────────────────────────────────
 
-  /// Inserta un nuevo movimiento.
+/// Inserta un nuevo movimiento.
   Future<int> insertarMovimiento(Movimiento movimiento) async {
     final db = await instance.database;
     return await db.insert(tableMovimientos, movimiento.toMap());
@@ -266,15 +271,15 @@ class DatabaseHelper {
 
     // JOIN con categorías para traer nombre, color e icono
     final maps = await db.rawQuery('''
-    SELECT 
-      m.id, m.tipo, m.cantidad, m.descripcion,
-      m.fecha, m.metodo_pago, m.categoria_id, m.usuario_id,
-      c.nombre AS categoria_nombre, c.color, c.icono
-    FROM $tableMovimientos m
-    INNER JOIN $tableCategorias c ON m.categoria_id = c.id
-    WHERE $whereClause
-    ORDER BY m.fecha DESC, m.id DESC
-  ''', args);
+      SELECT 
+        m.id, m.tipo, m.cantidad, m.descripcion,
+        m.fecha, m.metodo_pago, m.categoria_id, m.usuario_id,
+        c.nombre AS categoria_nombre, c.color, c.icono
+      FROM $tableMovimientos m
+      INNER JOIN $tableCategorias c ON m.categoria_id = c.id
+      WHERE $whereClause
+      ORDER BY m.fecha DESC, m.id DESC
+    ''', args);
 
     return maps.map((m) => Movimiento.fromMap(m)).toList();
   }
@@ -293,6 +298,10 @@ class DatabaseHelper {
   /// Elimina un movimiento por su ID.
   Future<int> eliminarMovimiento(int id) async {
     final db = await instance.database;
-    return await db.delete(tableMovimientos, where: 'id = ?', whereArgs: [id]);
+    return await db.delete(
+      tableMovimientos,
+      where: 'id = ?',
+      whereArgs: [id],
+    );
   }
 }

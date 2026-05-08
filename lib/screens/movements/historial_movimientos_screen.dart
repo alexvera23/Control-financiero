@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../../database/database_helper.dart';
 import '../../models/categoria.dart';
-import '../../models/movimientos.dart';
+import '../../models/movimiento.dart';
+import '../../utils/icon_picker.dart';
+import 'detalle_movimiento_screen.dart';
 import 'formulario_movimiento_screen.dart';
 
 class HistorialMovimientosScreen extends StatefulWidget {
@@ -22,8 +24,8 @@ class _HistorialMovimientosScreenState
   bool _cargando = true;
 
   // Filtros activos
-  String? _filtroTipo; // null = todos
-  Categoria? _filtroCategoria; // null = todas
+  String? _filtroTipo;          // null = todos
+  Categoria? _filtroCategoria;  // null = todas
   DateTime? _filtroDesde;
   DateTime? _filtroHasta;
 
@@ -59,7 +61,7 @@ class _HistorialMovimientosScreenState
 
   // ── Navegar al formulario de edición ────────────────────────
   Future<void> _editarMovimiento(Movimiento m) async {
-    final hubocambio = await Navigator.push<bool>(
+    final huboCambio = await Navigator.push<bool>(
       context,
       MaterialPageRoute(
         builder: (_) => FormularioMovimientoScreen(
@@ -68,7 +70,7 @@ class _HistorialMovimientosScreenState
         ),
       ),
     );
-    if (hubocambio == true) await _cargarTodo();
+    if (huboCambio == true) await _cargarTodo();
   }
 
   // ── Confirmar eliminación ────────────────────────────────────
@@ -86,10 +88,7 @@ class _HistorialMovimientosScreenState
           ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
             onPressed: () => Navigator.pop(context, true),
-            child: const Text(
-              'Eliminar',
-              style: TextStyle(color: Colors.white),
-            ),
+            child: const Text('Eliminar', style: TextStyle(color: Colors.white)),
           ),
         ],
       ),
@@ -98,9 +97,9 @@ class _HistorialMovimientosScreenState
       await DatabaseHelper.instance.eliminarMovimiento(m.id!);
       await _cargarTodo();
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(content: Text('Movimiento eliminado')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Movimiento eliminado')),
+        );
       }
     }
   }
@@ -193,11 +192,9 @@ class _HistorialMovimientosScreenState
                   Expanded(
                     child: OutlinedButton.icon(
                       icon: const Icon(Icons.calendar_today, size: 16),
-                      label: Text(
-                        desdeTmp != null
-                            ? _dateFormat.format(desdeTmp!)
-                            : 'Desde',
-                      ),
+                      label: Text(desdeTmp != null
+                          ? _dateFormat.format(desdeTmp!)
+                          : 'Desde'),
                       onPressed: () async {
                         final d = await showDatePicker(
                           context: ctx,
@@ -213,11 +210,9 @@ class _HistorialMovimientosScreenState
                   Expanded(
                     child: OutlinedButton.icon(
                       icon: const Icon(Icons.calendar_today, size: 16),
-                      label: Text(
-                        hastaTmp != null
-                            ? _dateFormat.format(hastaTmp!)
-                            : 'Hasta',
-                      ),
+                      label: Text(hastaTmp != null
+                          ? _dateFormat.format(hastaTmp!)
+                          : 'Hasta'),
                       onPressed: () async {
                         final d = await showDatePicker(
                           context: ctx,
@@ -281,7 +276,10 @@ class _HistorialMovimientosScreenState
                 const Positioned(
                   right: 8,
                   top: 8,
-                  child: CircleAvatar(backgroundColor: Colors.red, radius: 5),
+                  child: CircleAvatar(
+                    backgroundColor: Colors.red,
+                    radius: 5,
+                  ),
                 ),
             ],
           ),
@@ -290,33 +288,43 @@ class _HistorialMovimientosScreenState
       body: _cargando
           ? const Center(child: CircularProgressIndicator())
           : _movimientos.isEmpty
-          ? _buildEstadoVacio()
-          : Column(
-              children: [
-                if (_hayFiltrosActivos) _buildBannerFiltros(),
-                Expanded(
-                  child: ListView.separated(
-                    padding: const EdgeInsets.all(12),
-                    itemCount: _movimientos.length,
-                    separatorBuilder: (_, __) => const SizedBox(height: 8),
-                    itemBuilder: (_, i) => _MovimientoCard(
-                      movimiento: _movimientos[i],
-                      currencyFormat: _currencyFormat,
-                      dateFormat: _dateFormat,
-                      onEditar: () => _editarMovimiento(_movimientos[i]),
-                      onEliminar: () => _eliminarMovimiento(_movimientos[i]),
+              ? _buildEstadoVacio()
+              : Column(
+                  children: [
+                    if (_hayFiltrosActivos) _buildBannerFiltros(),
+                    Expanded(
+                      child: ListView.separated(
+                        padding: const EdgeInsets.all(12),
+                        itemCount: _movimientos.length,
+                        separatorBuilder: (_, __) => const SizedBox(height: 8),
+                        itemBuilder: (_, i) => _MovimientoCard(
+                          movimiento: _movimientos[i],
+                          currencyFormat: _currencyFormat,
+                          dateFormat: _dateFormat,
+                          onVerDetalle: () => Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => DetalleMovimientoScreen(
+                                movimiento: _movimientos[i],
+                              ),
+                            ),
+                          ),
+                          onEditar: () => _editarMovimiento(_movimientos[i]),
+                          onEliminar: () =>
+                              _eliminarMovimiento(_movimientos[i]),
+                        ),
+                      ),
                     ),
-                  ),
+                  ],
                 ),
-              ],
-            ),
       floatingActionButton: FloatingActionButton(
         onPressed: () async {
           final hubo = await Navigator.push<bool>(
             context,
             MaterialPageRoute(
-              builder: (_) =>
-                  FormularioMovimientoScreen(usuarioId: widget.usuarioId),
+              builder: (_) => FormularioMovimientoScreen(
+                usuarioId: widget.usuarioId,
+              ),
             ),
           );
           if (hubo == true) await _cargarTodo();
@@ -383,6 +391,7 @@ class _MovimientoCard extends StatelessWidget {
   final Movimiento movimiento;
   final NumberFormat currencyFormat;
   final DateFormat dateFormat;
+  final VoidCallback onVerDetalle;
   final VoidCallback onEditar;
   final VoidCallback onEliminar;
 
@@ -390,6 +399,7 @@ class _MovimientoCard extends StatelessWidget {
     required this.movimiento,
     required this.currencyFormat,
     required this.dateFormat,
+    required this.onVerDetalle,
     required this.onEditar,
     required this.onEliminar,
   });
@@ -401,107 +411,117 @@ class _MovimientoCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final hex = (movimiento.categoriaColor ?? '#607D8B').replaceAll('#', '');
     final categoriaColor = Color(int.parse('FF$hex', radix: 16));
+    final icono =
+        iconosPredefinidos[movimiento.categoriaIcono] ?? Icons.label;
 
     return Card(
       elevation: 2,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-        child: Row(
-          children: [
-            // Indicador de categoría
-            CircleAvatar(
-              backgroundColor: categoriaColor,
-              radius: 22,
-              child: const Icon(Icons.label, color: Colors.white, size: 20),
-            ),
-            const SizedBox(width: 12),
-
-            // Info principal
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    movimiento.descripcion,
-                    style: const TextStyle(fontWeight: FontWeight.w600),
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  const SizedBox(height: 2),
-                  Row(
-                    children: [
-                      Text(
-                        movimiento.categoriaNombre ?? 'Sin categoría',
-                        style: TextStyle(fontSize: 12, color: Colors.grey[600]),
-                      ),
-                      const SizedBox(width: 6),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 6,
-                          vertical: 1,
-                        ),
-                        decoration: BoxDecoration(
-                          color: Colors.grey[200],
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Text(
-                          movimiento.metodoPago,
-                          style: const TextStyle(fontSize: 10),
-                        ),
-                      ),
-                    ],
-                  ),
-                  Text(
-                    dateFormat.format(DateTime.parse(movimiento.fecha)),
-                    style: TextStyle(fontSize: 11, color: Colors.grey[500]),
-                  ),
-                ],
+      child: InkWell(
+        onTap: onVerDetalle, // tap en la card = ver detalle
+        borderRadius: BorderRadius.circular(8),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          child: Row(
+            children: [
+              // Indicador de categoría con icono real
+              CircleAvatar(
+                backgroundColor: categoriaColor,
+                radius: 22,
+                child: Icon(icono, color: Colors.white, size: 20),
               ),
-            ),
+              const SizedBox(width: 12),
 
-            // Cantidad + acciones
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                Text(
-                  '${movimiento.tipo == 'Ingreso' ? '+' : '-'}'
-                  '${currencyFormat.format(movimiento.cantidad)}',
-                  style: TextStyle(
-                    color: _colorTipo,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 15,
-                  ),
-                ),
-                Row(
-                  mainAxisSize: MainAxisSize.min,
+              // Info principal
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    IconButton(
-                      icon: const Icon(
-                        Icons.edit,
-                        size: 18,
-                        color: Colors.blue,
-                      ),
-                      onPressed: onEditar,
-                      padding: EdgeInsets.zero,
-                      constraints: const BoxConstraints(),
-                      tooltip: 'Editar',
+                    Text(
+                      movimiento.descripcion,
+                      style: const TextStyle(fontWeight: FontWeight.w600),
+                      overflow: TextOverflow.ellipsis,
                     ),
-                    const SizedBox(width: 8),
-                    IconButton(
-                      icon: const Icon(
-                        Icons.delete,
-                        size: 18,
-                        color: Colors.red,
-                      ),
-                      onPressed: onEliminar,
-                      padding: EdgeInsets.zero,
-                      constraints: const BoxConstraints(),
-                      tooltip: 'Eliminar',
+                    const SizedBox(height: 2),
+                    Row(
+                      children: [
+                        Text(
+                          movimiento.categoriaNombre ?? 'Sin categoría',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.grey[600],
+                          ),
+                        ),
+                        const SizedBox(width: 6),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 6, vertical: 1),
+                          decoration: BoxDecoration(
+                            color: Colors.grey[200],
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Text(
+                            movimiento.metodoPago,
+                            style: const TextStyle(fontSize: 10),
+                          ),
+                        ),
+                      ],
+                    ),
+                    Text(
+                      dateFormat.format(DateTime.parse(movimiento.fecha)),
+                      style: TextStyle(fontSize: 11, color: Colors.grey[500]),
                     ),
                   ],
                 ),
-              ],
-            ),
-          ],
+              ),
+
+              // Cantidad + acciones
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Text(
+                    '${movimiento.tipo == 'Ingreso' ? '+' : '-'}'
+                    '${currencyFormat.format(movimiento.cantidad)}',
+                    style: TextStyle(
+                      color: _colorTipo,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 15,
+                    ),
+                  ),
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      IconButton(
+                        icon: const Icon(Icons.info_outline,
+                            size: 18, color: Colors.grey),
+                        onPressed: onVerDetalle,
+                        padding: EdgeInsets.zero,
+                        constraints: const BoxConstraints(),
+                        tooltip: 'Ver detalle',
+                      ),
+                      const SizedBox(width: 6),
+                      IconButton(
+                        icon:
+                            const Icon(Icons.edit, size: 18, color: Colors.blue),
+                        onPressed: onEditar,
+                        padding: EdgeInsets.zero,
+                        constraints: const BoxConstraints(),
+                        tooltip: 'Editar',
+                      ),
+                      const SizedBox(width: 6),
+                      IconButton(
+                        icon: const Icon(Icons.delete,
+                            size: 18, color: Colors.red),
+                        onPressed: onEliminar,
+                        padding: EdgeInsets.zero,
+                        constraints: const BoxConstraints(),
+                        tooltip: 'Eliminar',
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ],
+          ),
         ),
       ),
     );
