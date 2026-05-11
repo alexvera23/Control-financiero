@@ -23,12 +23,11 @@ class DetalleMovimientoScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final currency =
-        NumberFormat.currency(symbol: '\$', decimalDigits: 2);
-    final fecha =
-        DateFormat('dd \'de\' MMMM \'de\' yyyy', 'es').format(
-      DateTime.parse(movimiento.fecha),
-    );
+    final currency = NumberFormat.currency(symbol: '\$', decimalDigits: 2);
+    final fecha = DateFormat(
+      'dd \'de\' MMMM \'de\' yyyy',
+      'es',
+    ).format(DateTime.parse(movimiento.fecha));
 
     return Scaffold(
       appBar: AppBar(title: const Text('Detalle del Movimiento')),
@@ -41,15 +40,21 @@ class DetalleMovimientoScreen extends StatelessWidget {
             Card(
               elevation: 4,
               shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16)),
+                borderRadius: BorderRadius.circular(16),
+              ),
               child: Padding(
-                padding: const EdgeInsets.symmetric(vertical: 28, horizontal: 20),
+                padding: const EdgeInsets.symmetric(
+                  vertical: 28,
+                  horizontal: 20,
+                ),
                 child: Column(
                   children: [
                     // Chip de tipo
                     Container(
                       padding: const EdgeInsets.symmetric(
-                          horizontal: 16, vertical: 6),
+                        horizontal: 16,
+                        vertical: 6,
+                      ),
                       decoration: BoxDecoration(
                         color: _colorTipo.withOpacity(0.15),
                         borderRadius: BorderRadius.circular(20),
@@ -101,7 +106,8 @@ class DetalleMovimientoScreen extends StatelessWidget {
             // ── Filas de detalle ───────────────────────────────
             Card(
               shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12)),
+                borderRadius: BorderRadius.circular(12),
+              ),
               child: Column(
                 children: [
                   _FilaDetalle(
@@ -120,18 +126,22 @@ class DetalleMovimientoScreen extends StatelessWidget {
                   ListTile(
                     leading: CircleAvatar(
                       backgroundColor: _colorCategoria,
-                      child: Icon(_iconoCategoria,
-                          color: Colors.white, size: 20),
+                      child: Icon(
+                        _iconoCategoria,
+                        color: Colors.white,
+                        size: 20,
+                      ),
                     ),
                     title: const Text(
                       'Categoría',
-                      style: TextStyle(
-                          fontSize: 12, color: Colors.grey),
+                      style: TextStyle(fontSize: 12, color: Colors.grey),
                     ),
                     subtitle: Text(
                       movimiento.categoriaNombre ?? 'Sin categoría',
                       style: const TextStyle(
-                          fontSize: 15, color: Colors.black87),
+                        fontSize: 15,
+                        color: Colors.black87,
+                      ),
                     ),
                   ),
                 ],

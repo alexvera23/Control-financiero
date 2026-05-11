@@ -13,12 +13,7 @@ class User {
 
   // Convierte un objeto User en un Map para insertarlo en SQLite
   Map<String, dynamic> toMap() {
-    return {
-      'id': id,
-      'nombre': nombre,
-      'email': email,
-      'password': password,
-    };
+    return {'id': id, 'nombre': nombre, 'email': email, 'password': password};
   }
 
   // Crea un objeto User a partir de un Map obtenido de SQLite

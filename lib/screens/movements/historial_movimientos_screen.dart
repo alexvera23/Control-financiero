@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:intl/date_symbol_data_local.dart';
 import '../../database/database_helper.dart';
 import '../../models/categoria.dart';
 import '../../models/movimiento.dart';
@@ -24,8 +25,8 @@ class _HistorialMovimientosScreenState
   bool _cargando = true;
 
   // Filtros activos
-  String? _filtroTipo;          // null = todos
-  Categoria? _filtroCategoria;  // null = todas
+  String? _filtroTipo; // null = todos
+  Categoria? _filtroCategoria; // null = todas
   DateTime? _filtroDesde;
   DateTime? _filtroHasta;
 
@@ -35,6 +36,7 @@ class _HistorialMovimientosScreenState
   @override
   void initState() {
     super.initState();
+    initializeDateFormatting('es_ES', null);
     _cargarTodo();
   }
 
@@ -88,7 +90,10 @@ class _HistorialMovimientosScreenState
           ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('Eliminar', style: TextStyle(color: Colors.white)),
+            child: const Text(
+              'Eliminar',
+              style: TextStyle(color: Colors.white),
+            ),
           ),
         ],
       ),
@@ -97,9 +102,9 @@ class _HistorialMovimientosScreenState
       await DatabaseHelper.instance.eliminarMovimiento(m.id!);
       await _cargarTodo();
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Movimiento eliminado')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('Movimiento eliminado')));
       }
     }
   }
@@ -192,9 +197,11 @@ class _HistorialMovimientosScreenState
                   Expanded(
                     child: OutlinedButton.icon(
                       icon: const Icon(Icons.calendar_today, size: 16),
-                      label: Text(desdeTmp != null
-                          ? _dateFormat.format(desdeTmp!)
-                          : 'Desde'),
+                      label: Text(
+                        desdeTmp != null
+                            ? _dateFormat.format(desdeTmp!)
+                            : 'Desde',
+                      ),
                       onPressed: () async {
                         final d = await showDatePicker(
                           context: ctx,
@@ -210,9 +217,11 @@ class _HistorialMovimientosScreenState
                   Expanded(
                     child: OutlinedButton.icon(
                       icon: const Icon(Icons.calendar_today, size: 16),
-                      label: Text(hastaTmp != null
-                          ? _dateFormat.format(hastaTmp!)
-                          : 'Hasta'),
+                      label: Text(
+                        hastaTmp != null
+                            ? _dateFormat.format(hastaTmp!)
+                            : 'Hasta',
+                      ),
                       onPressed: () async {
                         final d = await showDatePicker(
                           context: ctx,
@@ -276,10 +285,7 @@ class _HistorialMovimientosScreenState
                 const Positioned(
                   right: 8,
                   top: 8,
-                  child: CircleAvatar(
-                    backgroundColor: Colors.red,
-                    radius: 5,
-                  ),
+                  child: CircleAvatar(backgroundColor: Colors.red, radius: 5),
                 ),
             ],
           ),
@@ -288,43 +294,41 @@ class _HistorialMovimientosScreenState
       body: _cargando
           ? const Center(child: CircularProgressIndicator())
           : _movimientos.isEmpty
-              ? _buildEstadoVacio()
-              : Column(
-                  children: [
-                    if (_hayFiltrosActivos) _buildBannerFiltros(),
-                    Expanded(
-                      child: ListView.separated(
-                        padding: const EdgeInsets.all(12),
-                        itemCount: _movimientos.length,
-                        separatorBuilder: (_, __) => const SizedBox(height: 8),
-                        itemBuilder: (_, i) => _MovimientoCard(
-                          movimiento: _movimientos[i],
-                          currencyFormat: _currencyFormat,
-                          dateFormat: _dateFormat,
-                          onVerDetalle: () => Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => DetalleMovimientoScreen(
-                                movimiento: _movimientos[i],
-                              ),
-                            ),
+          ? _buildEstadoVacio()
+          : Column(
+              children: [
+                if (_hayFiltrosActivos) _buildBannerFiltros(),
+                Expanded(
+                  child: ListView.separated(
+                    padding: const EdgeInsets.all(12),
+                    itemCount: _movimientos.length,
+                    separatorBuilder: (_, __) => const SizedBox(height: 8),
+                    itemBuilder: (_, i) => _MovimientoCard(
+                      movimiento: _movimientos[i],
+                      currencyFormat: _currencyFormat,
+                      dateFormat: _dateFormat,
+                      onVerDetalle: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => DetalleMovimientoScreen(
+                            movimiento: _movimientos[i],
                           ),
-                          onEditar: () => _editarMovimiento(_movimientos[i]),
-                          onEliminar: () =>
-                              _eliminarMovimiento(_movimientos[i]),
                         ),
                       ),
+                      onEditar: () => _editarMovimiento(_movimientos[i]),
+                      onEliminar: () => _eliminarMovimiento(_movimientos[i]),
                     ),
-                  ],
+                  ),
                 ),
+              ],
+            ),
       floatingActionButton: FloatingActionButton(
         onPressed: () async {
           final hubo = await Navigator.push<bool>(
             context,
             MaterialPageRoute(
-              builder: (_) => FormularioMovimientoScreen(
-                usuarioId: widget.usuarioId,
-              ),
+              builder: (_) =>
+                  FormularioMovimientoScreen(usuarioId: widget.usuarioId),
             ),
           );
           if (hubo == true) await _cargarTodo();
@@ -411,8 +415,7 @@ class _MovimientoCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final hex = (movimiento.categoriaColor ?? '#607D8B').replaceAll('#', '');
     final categoriaColor = Color(int.parse('FF$hex', radix: 16));
-    final icono =
-        iconosPredefinidos[movimiento.categoriaIcono] ?? Icons.label;
+    final icono = iconosPredefinidos[movimiento.categoriaIcono] ?? Icons.label;
 
     return Card(
       elevation: 2,
@@ -454,7 +457,9 @@ class _MovimientoCard extends StatelessWidget {
                         const SizedBox(width: 6),
                         Container(
                           padding: const EdgeInsets.symmetric(
-                              horizontal: 6, vertical: 1),
+                            horizontal: 6,
+                            vertical: 1,
+                          ),
                           decoration: BoxDecoration(
                             color: Colors.grey[200],
                             borderRadius: BorderRadius.circular(8),
@@ -491,8 +496,11 @@ class _MovimientoCard extends StatelessWidget {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       IconButton(
-                        icon: const Icon(Icons.info_outline,
-                            size: 18, color: Colors.grey),
+                        icon: const Icon(
+                          Icons.info_outline,
+                          size: 18,
+                          color: Colors.grey,
+                        ),
                         onPressed: onVerDetalle,
                         padding: EdgeInsets.zero,
                         constraints: const BoxConstraints(),
@@ -500,8 +508,11 @@ class _MovimientoCard extends StatelessWidget {
                       ),
                       const SizedBox(width: 6),
                       IconButton(
-                        icon:
-                            const Icon(Icons.edit, size: 18, color: Colors.blue),
+                        icon: const Icon(
+                          Icons.edit,
+                          size: 18,
+                          color: Colors.blue,
+                        ),
                         onPressed: onEditar,
                         padding: EdgeInsets.zero,
                         constraints: const BoxConstraints(),
@@ -509,8 +520,11 @@ class _MovimientoCard extends StatelessWidget {
                       ),
                       const SizedBox(width: 6),
                       IconButton(
-                        icon: const Icon(Icons.delete,
-                            size: 18, color: Colors.red),
+                        icon: const Icon(
+                          Icons.delete,
+                          size: 18,
+                          color: Colors.red,
+                        ),
                         onPressed: onEliminar,
                         padding: EdgeInsets.zero,
                         constraints: const BoxConstraints(),

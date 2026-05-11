@@ -3,7 +3,6 @@ import 'package:path/path.dart';
 import '../models/users.dart';
 import '../models/categoria.dart';
 import '../models/movimiento.dart';
-import '../models/presupuesto.dart';
 
 class DatabaseHelper {
   // Patrón Singleton: asegura que solo exista una instancia de esta clase.
@@ -181,14 +180,14 @@ class DatabaseHelper {
     return null;
   }
 
-// ─────────────────────────────────────────────────────────────
-//  MÓDULO 5 – CRUD CATEGORÍAS
-// ─────────────────────────────────────────────────────────────
+  // ─────────────────────────────────────────────────────────────
+  //  MÓDULO 5 – CRUD CATEGORÍAS
+  // ─────────────────────────────────────────────────────────────
 
-/// Crea una nueva categoría para el usuario dado.
-Future<int> insertarCategoria(Categoria categoria) async {
-  final db = await instance.database;
-  return await db.insert(tableCategorias, categoria.toMap());
+  /// Crea una nueva categoría para el usuario dado.
+  Future<int> insertarCategoria(Categoria categoria) async {
+    final db = await instance.database;
+    return await db.insert(tableCategorias, categoria.toMap());
   }
 
   /// Retorna todas las categorías del usuario.
@@ -217,18 +216,14 @@ Future<int> insertarCategoria(Categoria categoria) async {
   /// Elimina una categoría. Por CASCADE, sus movimientos también se eliminan.
   Future<int> eliminarCategoria(int id) async {
     final db = await instance.database;
-    return await db.delete(
-      tableCategorias,
-      where: 'id = ?',
-      whereArgs: [id],
-    );
+    return await db.delete(tableCategorias, where: 'id = ?', whereArgs: [id]);
   }
 
-// ─────────────────────────────────────────────────────────────
-//  MÓDULO 3 y 4 – CRUD MOVIMIENTOS
-// ─────────────────────────────────────────────────────────────
+  // ─────────────────────────────────────────────────────────────
+  //  MÓDULO 3 y 4 – CRUD MOVIMIENTOS
+  // ─────────────────────────────────────────────────────────────
 
-/// Inserta un nuevo movimiento.
+  /// Inserta un nuevo movimiento.
   Future<int> insertarMovimiento(Movimiento movimiento) async {
     final db = await instance.database;
     return await db.insert(tableMovimientos, movimiento.toMap());
@@ -295,13 +290,186 @@ Future<int> insertarCategoria(Categoria categoria) async {
     );
   }
 
+  // Obtener suma total por tipo (Ingreso/Gasto) para el Dashboard
+  Future<double> getTotalPorTipo(int usuarioId, String tipo) async {
+    final db = await instance.database;
+    final result = await db.rawQuery(
+      'SELECT SUM(cantidad) as total FROM Movimientos WHERE usuario_id = ? AND tipo = ?',
+      [usuarioId, tipo],
+    );
+    return (result.first['total'] as num?)?.toDouble() ?? 0.0;
+  }
+
+  // Obtener gastos agrupados por categoría para las Estadísticas
+  Future<List<Map<String, dynamic>>> getGastosPorCategoria(
+    int usuarioId,
+  ) async {
+    final db = await instance.database;
+    return await db.rawQuery(
+      '''
+      SELECT c.nombre, c.color, SUM(m.cantidad) as total 
+      FROM $tableMovimientos m
+      INNER JOIN $tableCategorias c ON m.categoria_id = c.id
+      WHERE m.usuario_id = ? AND m.tipo = 'Gasto'
+      GROUP BY c.id
+    ''',
+      [usuarioId],
+    );
+  }
+
+  // Función para el Módulo 2 (Dashboard) - Resumen del mes actual
+  Future<Map<String, double>> getResumenMensual(int usuarioId) async {
+    final db = await instance.database;
+
+    // Obtenemos todos los movimientos del usuario
+    final List<Map<String, dynamic>> res = await db.query(
+      tableMovimientos,
+      where: 'usuario_id = ?',
+      whereArgs: [usuarioId],
+    );
+
+    double ingresos = 0.0;
+    double gastos = 0.0;
+
+    for (var row in res) {
+      double cantidad = (row['cantidad'] as num).toDouble();
+      if (row['tipo'] == 'Ingreso') {
+        ingresos += cantidad;
+      } else {
+        gastos += cantidad;
+      }
+    }
+
+    return {
+      'ingresos': ingresos,
+      'gastos': gastos,
+      'balance': ingresos - gastos,
+    };
+  }
+
   /// Elimina un movimiento por su ID.
   Future<int> eliminarMovimiento(int id) async {
     final db = await instance.database;
-    return await db.delete(
-      tableMovimientos,
+    return await db.delete(tableMovimientos, where: 'id = ?', whereArgs: [id]);
+  }
+
+  // ─────────────────────────────────────────────────────────────
+  //  MÓDULO 6 – CRUD PRESUPUESTOS
+  // ─────────────────────────────────────────────────────────────
+
+  /// Inserta un nuevo presupuesto.
+  Future<int> insertarPresupuesto(Map<String, dynamic> presupuesto) async {
+    final db = await instance.database;
+    return await db.insert(tablePresupuestos, presupuesto);
+  }
+
+  /// Obtiene todos los presupuestos del usuario para un mes/año específico.
+  Future<List<Map<String, dynamic>>> getPresupuestos(
+    int usuarioId, {
+    int? mes,
+    int? anio,
+  }) async {
+    final db = await instance.database;
+    final conditions = <String>['p.usuario_id = ?'];
+    final args = <dynamic>[usuarioId];
+
+    if (mes != null) {
+      conditions.add('p.mes = ?');
+      args.add(mes);
+    }
+    if (anio != null) {
+      conditions.add('p.anio = ?');
+      args.add(anio);
+    }
+
+    final whereClause = conditions.join(' AND ');
+
+    return await db.rawQuery('''
+      SELECT p.*, c.nombre AS categoria_nombre, c.color
+      FROM $tablePresupuestos p
+      INNER JOIN $tableCategorias c ON p.categoria_id = c.id
+      WHERE $whereClause
+      ORDER BY c.nombre ASC
+    ''', args);
+  }
+
+  /// Obtiene gasto actual de una categoría en un mes específico.
+  Future<double> getGastoActualCategoria(
+    int usuarioId,
+    int categoriaId,
+    int mes,
+    int anio,
+  ) async {
+    final db = await instance.database;
+    final result = await db.rawQuery(
+      '''
+      SELECT SUM(m.cantidad) as total
+      FROM $tableMovimientos m
+      WHERE m.usuario_id = ? 
+        AND m.categoria_id = ? 
+        AND m.tipo = 'Gasto'
+        AND strftime('%m', m.fecha) = ?
+        AND strftime('%Y', m.fecha) = ?
+    ''',
+      [usuarioId, categoriaId, mes.toString().padLeft(2, '0'), anio.toString()],
+    );
+    return (result.first['total'] as num?)?.toDouble() ?? 0.0;
+  }
+
+  /// Actualiza un presupuesto existente.
+  Future<int> actualizarPresupuesto(Map<String, dynamic> presupuesto) async {
+    final db = await instance.database;
+    final id = presupuesto['id'];
+    return await db.update(
+      tablePresupuestos,
+      presupuesto,
       where: 'id = ?',
       whereArgs: [id],
     );
+  }
+
+  /// Elimina un presupuesto por su ID.
+  Future<int> eliminarPresupuesto(int id) async {
+    final db = await instance.database;
+    return await db.delete(tablePresupuestos, where: 'id = ?', whereArgs: [id]);
+  }
+
+  /// Obtiene ingresos vs gastos mensuales para gráfico de evolución.
+  Future<List<Map<String, dynamic>>> getEvolucionMensual(
+    int usuarioId, {
+    int meses = 6,
+  }) async {
+    final db = await instance.database;
+    final ahora = DateTime.now();
+    final resultados = <Map<String, dynamic>>[];
+
+    for (int i = meses - 1; i >= 0; i--) {
+      final fecha = DateTime(ahora.year, ahora.month - i, 1);
+      final mes = fecha.month.toString().padLeft(2, '0');
+      final anio = fecha.year.toString();
+
+      final result = await db.rawQuery(
+        '''
+        SELECT 
+          SUM(CASE WHEN tipo = 'Ingreso' THEN cantidad ELSE 0 END) as ingresos,
+          SUM(CASE WHEN tipo = 'Gasto' THEN cantidad ELSE 0 END) as gastos
+        FROM $tableMovimientos
+        WHERE usuario_id = ? 
+          AND strftime('%m', fecha) = ?
+          AND strftime('%Y', fecha) = ?
+      ''',
+        [usuarioId, mes, anio],
+      );
+
+      final row = result.first;
+      resultados.add({
+        'mes': fecha.month,
+        'anio': fecha.year,
+        'ingresos': (row['ingresos'] as num?)?.toDouble() ?? 0.0,
+        'gastos': (row['gastos'] as num?)?.toDouble() ?? 0.0,
+      });
+    }
+
+    return resultados;
   }
 }
