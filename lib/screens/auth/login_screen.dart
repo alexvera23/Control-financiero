@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../database/database_helper.dart';
-import './register_screen.dart';
+import '../dashboard/dashboard_screen.dart';
 
 class LoginScreen extends StatefulWidget {
-  const LoginScreen({Key? key}) : super(key: key);
+  const LoginScreen({super.key});
 
   @override
   State<LoginScreen> createState() => _LoginScreenState();
@@ -41,23 +41,30 @@ class _LoginScreenState extends State<LoginScreen> {
 
       try {
         // 2. Consultar a la base de datos
-        final user = await DatabaseHelper.instance.loginUsuario(email, password);
+        final user = await DatabaseHelper.instance.loginUsuario(
+          email,
+          password,
+        );
 
         if (user != null) {
           // 3. Guardar sesión activa usando SharedPreferences
           final prefs = await SharedPreferences.getInstance();
           await prefs.setBool('isLoggedIn', true);
-          await prefs.setInt('userId', user.id!);
+          await prefs.setInt('usuarioId', user.id!);
 
           if (!mounted) return;
-          
+
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text('¡Bienvenido, ${user.nombre}!')),
           );
 
-          // 4. Navegar al Dashboard (Reemplazar con la ruta real de tu Módulo 2)
-          // Navigator.pushReplacementNamed(context, '/dashboard');
-          
+          // 4. Navegar al Dashboard con el usuario correcto
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+              builder: (_) => DashboardScreen(usuarioId: user.id!),
+            ),
+          );
         } else {
           // Credenciales incorrectas
           if (!mounted) return;
@@ -70,9 +77,9 @@ class _LoginScreenState extends State<LoginScreen> {
         }
       } catch (e) {
         if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error al iniciar sesión: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Error al iniciar sesión: $e')));
       } finally {
         if (mounted) {
           setState(() {
@@ -104,14 +111,11 @@ class _LoginScreenState extends State<LoginScreen> {
                     color: Colors.blueAccent,
                   ),
                   const SizedBox(height: 32),
-                  
+
                   const Text(
                     'Iniciar Sesión',
                     textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontSize: 28,
-                      fontWeight: FontWeight.bold,
-                    ),
+                    style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(height: 32),
 
@@ -149,7 +153,9 @@ class _LoginScreenState extends State<LoginScreen> {
                       prefixIcon: const Icon(Icons.lock),
                       suffixIcon: IconButton(
                         icon: Icon(
-                          _obscurePassword ? Icons.visibility : Icons.visibility_off,
+                          _obscurePassword
+                              ? Icons.visibility
+                              : Icons.visibility_off,
                         ),
                         onPressed: () {
                           setState(() {
@@ -197,7 +203,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   TextButton(
                     onPressed: () {
                       // Navegar a la pantalla de registro
-                       Navigator.pushNamed(context, '/register');
+                      Navigator.pushNamed(context, '/register');
                     },
                     child: const Text('¿No tienes cuenta? Regístrate aquí'),
                   ),
